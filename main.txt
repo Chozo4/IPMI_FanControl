@@ -1,0 +1,45 @@
+#Persistent
+DetectHiddenWindows, on
+OnExit, End
+
+SetTimer, Polling, 1000
+
+#Include Class_NvAPI
+#Include Func_Common
+
+;msgbox % "test:" . StdOut("ipmitool -I wmi raw 0x3a 0xd7")
+;msgbox % "test:" . StdOut("ipmitool -I wmi raw 0x3a 0xd9")
+return
+
+Polling()
+{
+  static GPU0:=NvAPI.GPU_GetThermalSettings().1, LastPWM:=0
+  static GPU0_MINTemp:=40,GPU0_MAXTemp:=60,FAN0_MIN:=20,Fan0_MAX:=100
+ 
+  Delta:=GPU0_MAXTemp-GPU0_MINTemp
+  Curve:=80/Delta
+  TRamp:=((NvAPI.GPU_GetThermalSettings().1.currentTemp-GPU0_MINTemp)*Curve)+20
+  FAN0_PWM := int2hex(TRamp>100?100:TRamp)
+
+  ;tooltip % FAN0_PWM
+  if(LastPWM != FAN0_PWM)
+  {
+    StdOut("ipmitool -I wmi raw 0x3a 0xd6 " . Fan0_PWM . " 0x64 0x64 0x2d 0x37 0x32 0x14 0x14 0x14 0x14 0x14 0x14 0x14 0x14 0x14 0x14")
+   ; tooltip UPDATED
+  }
+  lastPWM := FAN0_PWM
+
+}
+
+End:
+  StdOut("ipmitool -I wmi raw 0x3a 0xd6 0x32 0x64 0x64 0x2d 0x37 0x32 0x14 0x14 0x14 0x14 0x14 0x14 0x14 0x14 0x14 0x14")
+  StdOut("exit")
+  ExitApp
+
+
+
+
+
+
+
+

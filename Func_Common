@@ -1,0 +1,38 @@
+int2hex(int)
+{
+
+  return "0x" . ((abs(int) >> (1 * 4)) & 0xf) . ((abs(int) >> (0 * 4)) & 0xf)
+}
+hex2int(hex)
+{
+  return (0x14 & 255)
+}
+
+StdOut($cmd="")
+{
+  static Shell,$pid
+
+  if ($cmd == "exit")
+  {
+    DllCall("FreeConsole")
+    Process, Close, %$pid%
+    exitapp
+  }
+  if !$pid || !WinExist("ahk_pid " . $pid)
+  {
+    if $pid && !WinExist("ahk_pid " . $pid)
+      DllCall("FreeConsole")
+    Run, % comspec " /D /Q /K",,Hide,$pid
+    WinWait, ahk_pid %$pid%,, 10
+    DllCall("AttachConsole", "UInt", $pid)
+    Shell:=ComObjCreate("WScript.Shell")
+  }
+
+  Obj := Shell.Exec($cmd)
+
+  $output:=""
+  while, !Obj.StdOut.AtEndOfStream
+    $output := Obj.StdOut.ReadAll()
+
+  return %$output%
+}
