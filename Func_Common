@@ -1,16 +1,17 @@
 int2hex(int)
 {
-
-  return "0x" . ((abs(int) >> (1 * 4)) & 0xf) . ((abs(int) >> (0 * 4)) & 0xf)
+  $b := ((abs(int) >> (0 * 4)) & 0xf)
+  return "0x" . ((abs(int) >> (1 * 4)) & 0xf) . ($b>9? chr(55 + $b):$b)
 }
 hex2int(hex)
 {
-  return (0x14 & 255)
+  return (hex & 255)
 }
 
 StdOut($cmd="")
 {
-  static Shell,$pid
+  static Shell, $pid=0
+  DetectHiddenWindows, on
 
   if ($cmd == "exit")
   {
@@ -18,9 +19,9 @@ StdOut($cmd="")
     Process, Close, %$pid%
     exitapp
   }
-  if !$pid || !WinExist("ahk_pid " . $pid)
+  if !WinExist("ahk_pid " . $pid)
   {
-    if $pid && !WinExist("ahk_pid " . $pid)
+    if !WinExist()
       DllCall("FreeConsole")
     Run, % comspec " /D /Q /K",,Hide,$pid
     WinWait, ahk_pid %$pid%,, 10
