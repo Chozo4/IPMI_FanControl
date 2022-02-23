@@ -1,8 +1,7 @@
 #Persistent
-DetectHiddenWindows, on
 OnExit, End
 
-SetTimer, Polling, 1000
+SetTimer, Polling, 5000
 
 #Include Class_NvAPI
 #Include Func_Common
@@ -13,21 +12,24 @@ return
 
 Polling()
 {
-  static GPU0:=NvAPI.GPU_GetThermalSettings().1, LastPWM:=0
-  static GPU0_MINTemp:=40,GPU0_MAXTemp:=60,FAN0_MIN:=20,Fan0_MAX:=100
- 
+  static GPU0:=NvAPI.GPU_GetThermalSettings().1, LastTemp:=0, LastPWM:=0
+  static GPU0_MINTemp:=45,GPU0_MAXTemp:=80,FAN0_MIN:=20,Fan0_MAX:=100
+
+  TCurr:=NvAPI.GPU_GetThermalSettings().1.currentTemp
   Delta:=GPU0_MAXTemp-GPU0_MINTemp
   Curve:=80/Delta
-  TRamp:=((NvAPI.GPU_GetThermalSettings().1.currentTemp-GPU0_MINTemp)*Curve)+20
-  FAN0_PWM := int2hex(TRamp>100?100:TRamp)
+  TRamp:=((TCurr-GPU0_MINTemp)*Curve)+20
+  FAN0_PWM := int2hex(TRamp>100?100:((TRamp<20)?20:TRamp))
+  THyst := 4
 
-  ;tooltip % FAN0_PWM
-  if(LastPWM != FAN0_PWM)
+  ;tooltip % LastPWM . " / " . LastTemp . "|" . TCurr
+  if( (LastPWM != FAN0_PWM) && (LastTemp != TCurr) && ( (TCurr <= (LastTemp-THyst)) || (TCurr >= (LastTemp+THyst)) ))
   {
     StdOut("ipmitool -I wmi raw 0x3a 0xd6 " . Fan0_PWM . " 0x64 0x64 0x2d 0x37 0x32 0x14 0x14 0x14 0x14 0x14 0x14 0x14 0x14 0x14 0x14")
-   ; tooltip UPDATED
+    LastTemp := TCurr, LastPWM := FAN0_PWM
+    ;tooltip UPDATED
   }
-  lastPWM := FAN0_PWM
+
 
 }
 
